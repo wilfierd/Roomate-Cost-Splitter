@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roommate Cost Splitter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 800px;
+            margin-top: 30px;
+        }
+        .result {
+            margin-top: 20px;
+            display: none;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .card {
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .entry-container { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .remove-btn { float: right; margin-top: -5px; }
+        .breakdown-table {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .breakdown-table th, .breakdown-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .breakdown-amount {
+            text-align: right;
+            font-weight: bold;
+        }
+        .positive {
+            color: green;
+        }
+        .negative {
+            color: red;
+        }
+        .final-amount {
+            font-size: 24px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .percentage-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        .percentage-inputs input {
+            text-align: center;
+        }
+        .percentage-inputs label {
+            font-size: 0.8rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">Monthly Roommate Cost Splitter</h2>
+        
+        <div class="card">
+            <div class="card-header">
+                Enter Monthly Expenses
+            </div>
+            <div class="card-body">
+                <form id="costForm">
+                    <div class="form-group">
+                        <label>Total Monthly Cost (VND):</label>
+                        <input type="text" class="form-control" id="total" placeholder="Enter total cost" required>
+                    </div>
+
+                    <div id="customExpenses">
+                        <h5>Custom Split Expenses
+                            <button type="button" class="btn btn-sm btn-success" onclick="addCustomExpense()">+ Add</button>
+                        </h5>
+                    </div>
+
+                    <div id="sharedPurchases">
+                        <h5>Shared Purchases 
+                            <button type="button" class="btn btn-sm btn-success" onclick="addSharedPurchase()">+ Add</button>
+                        </h5>
+                    </div>
+
+                    <div id="transfers">
+                        <h5>Transfers 
+                            <button type="button" class="btn btn-sm btn-success" onclick="addTransfer()">+ Add</button>
+                        </h5>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Calculate Monthly Payments</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card result" id="resultCard">
+            <div class="card-header">Monthly Results - Total Rent: <span id="rent_total"></span> VND</div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3">
+                    <p><strong>Total Rent:</strong> <span id="rent_total_info"></span> VND</p>
+                    <p><strong>Base Rent (excluding custom expenses):</strong> <span id="base_rent"></span> VND</p>
+                </div>
+                <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tiep-tab" data-bs-toggle="tab" data-bs-target="#tiep-pane" type="button" role="tab">Tiep</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="hieu-tab" data-bs-toggle="tab" data-bs-target="#hieu-pane" type="button" role="tab">Hieu</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="hai-tab" data-bs-toggle="tab" data-bs-target="#hai-pane" type="button" role="tab">Hai</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary-pane" type="button" role="tab">Summary</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="resultTabContent">
+                    <div class="tab-pane fade show active" id="tiep-pane" role="tabpanel" tabindex="0">
+                        <h4 class="mt-3">Tiep's Breakdown</h4>
+                        <table class="breakdown-table" id="tiep-breakdown">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Amount (VND)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <div class="final-amount">
+                            Final Payment: <span id="tiep_result"></span> VND
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="hieu-pane" role="tabpanel" tabindex="0">
+                        <h4 class="mt-3">Hieu's Breakdown</h4>
+                        <table class="breakdown-table" id="hieu-breakdown">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Amount (VND)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <div class="final-amount">
+                            Final Payment: <span id="hieu_result"></span> VND
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="hai-pane" role="tabpanel" tabindex="0">
+                        <h4 class="mt-3">Hai's Breakdown</h4>
+                        <table class="breakdown-table" id="hai-breakdown">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Amount (VND)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <div class="final-amount">
+                            Final Payment: <span id="hai_result"></span> VND
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="summary-pane" role="tabpanel" tabindex="0">
+                        <h4 class="mt-3">Payment Summary</h4>
+                        <div class="row mt-4">
+                            <div class="col-md-4 text-center">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5>Tiep pays:</h5>
+                                        <h4 id="tiep_summary"></h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5>Hieu pays:</h5>
+                                        <h4 id="hieu_summary"></h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5>Hai pays:</h5>
+                                        <h4 id="hai_summary"></h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-success mt-3 text-center">
+                            <strong>Total Check: <span id="total_check"></span> VND</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function formatNumberWithCommas(value) {
+            return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function handleInput(event) {
+            const input = event.target;
+            const value = input.value.replace(/,/g, ''); // Remove existing commas
+            const cursorPosition = input.selectionStart;
+
+            if (!isNaN(value) && value !== '') {
+                const formattedValue = formatNumberWithCommas(value);
+                input.value = formattedValue;
+
+                // Adjust cursor position
+                const newCursorPosition = cursorPosition + (formattedValue.length - value.length);
+                input.setSelectionRange(newCursorPosition, newCursorPosition);
+            }
+        }
+
+        function addCustomExpense() {
+            const container = document.getElementById('customExpenses');
+            const div = document.createElement('div');
+            div.className = 'entry-container';
+            div.innerHTML = `
+                <button type="button" class="btn btn-sm btn-danger remove-btn" onclick="this.parentElement.remove()">×</button>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <input type="text" class="form-control custom-expense-desc" placeholder="Enter description" required>
+                </div>
+                <div class="form-group">
+                    <label>Amount (VND):</label>
+                    <input type="text" class="form-control custom-expense-amount" placeholder="Enter amount" required>
+                </div>
+                <div class="form-group">
+                    <label>Who uses this?</label>
+                    <div class="form-check">
+                        <input class="form-check-input tiep-uses" type="checkbox" checked>
+                        <label class="form-check-label">Tiep</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input hieu-uses" type="checkbox" checked>
+                        <label class="form-check-label">Hieu</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input hai-uses" type="checkbox" checked>
+                        <label class="form-check-label">Hai</label>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            div.querySelector('.custom-expense-amount').addEventListener('input', handleInput);
+        }
+
+        function addSharedPurchase() {
+            const container = document.getElementById('sharedPurchases');
+            const div = document.createElement('div');
+            div.className = 'entry-container';
+            div.innerHTML = `
+                <button type="button" class="btn btn-sm btn-danger remove-btn" onclick="this.parentElement.remove()">×</button>
+                <div class="form-group">
+                    <label>Amount (VND):</label>
+                    <input type="text" class="form-control shared-amount" placeholder="Enter amount" required>
+                </div>
+                <div class="form-group">
+                    <label>Purchased by:</label>
+                    <select class="form-control shared-by" required>
+                        <option value="" disabled selected>Select person</option>
+                        <option value="tiep">Tiep</option>
+                        <option value="hieu">Hieu</option>
+                        <option value="hai">Hai</option>
+                    </select>
+                </div>
+            `;
+            container.appendChild(div);
+            div.querySelector('input').addEventListener('input', handleInput);
+        }
+
+        function addTransfer() {
+            const container = document.getElementById('transfers');
+            const div = document.createElement('div');
+            div.className = 'entry-container';
+            div.innerHTML = `
+                <button type="button" class="btn btn-sm btn-danger remove-btn" onclick="this.parentElement.remove()">×</button>
+                <div class="form-group">
+                    <label>Amount (VND):</label>
+                    <input type="text" class="form-control transfer-amount" placeholder="Enter amount" required>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <select class="form-control transfer-from" required>
+                            <option value="" disabled selected>Select payer</option>
+                            <option value="tiep">Tiep</option>
+                            <option value="hieu">Hieu</option>
+                            <option value="hai">Hai</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <select class="form-control transfer-to" required>
+                            <option value="" disabled selected>Select payee</option>
+                            <option value="tiep">Tiep</option>
+                            <option value="hieu">Hieu</option>
+                            <option value="hai">Hai</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            div.querySelector('input').addEventListener('input', handleInput);
+        }
+
+        // Format the total when the page loads
+        window.onload = function() {
+            const total = document.getElementById('total');
+            if (total.value) {
+                total.value = formatNumberWithCommas(total.value);
+            }
+
+            // Add initial examples
+            addCustomExpense();
+            document.querySelector('.custom-expense-desc').value = "";
+            document.querySelector('.custom-expense-amount').value = "";
+            document.querySelector('.tiep-uses').checked = false;
+            document.querySelector('.hieu-uses').checked = false;
+            document.querySelector('.hai-uses').checked = false;
+            
+            addSharedPurchase();
+            document.querySelector('.shared-amount').value = "";
+            
+            addTransfer();
+            document.querySelector('.transfer-amount').value = "";
+        };
+
+        const numberInputs = document.querySelectorAll('input[type="text"]');
+        numberInputs.forEach(input => {
+            input.addEventListener('input', handleInput);
+        });
+
+        function populateBreakdownTable(tableId, breakdown) {
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            tbody.innerHTML = '';
+            
+            breakdown.forEach(item => {
+                const row = document.createElement('tr');
+                const descCell = document.createElement('td');
+                const amountCell = document.createElement('td');
+                
+                descCell.textContent = item.description;
+                amountCell.textContent = item.amount;
+                amountCell.className = 'breakdown-amount';
+                
+                if (item.amount.startsWith('+')) {
+                    amountCell.classList.add('positive');
+                } else if (item.amount.startsWith('-')) {
+                    amountCell.classList.add('negative');
+                }
+                
+                row.appendChild(descCell);
+                row.appendChild(amountCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        document.getElementById('costForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                total: document.getElementById('total').value.replace(/,/g, ''),
+                customExpenses: Array.from(document.querySelectorAll('.custom-expense-amount')).map((input, index) => {
+                    const container = input.closest('.entry-container');
+                    return {
+                        description: document.querySelectorAll('.custom-expense-desc')[index].value,
+                        amount: input.value.replace(/,/g, ''),
+                        tiepUses: container.querySelector('.tiep-uses').checked,
+                        hieuUses: container.querySelector('.hieu-uses').checked,
+                        haiUses: container.querySelector('.hai-uses').checked
+                    };
+                }),
+                sharedPurchases: Array.from(document.querySelectorAll('.shared-amount')).map((input, index) => ({
+                    amount: input.value.replace(/,/g, ''),
+                    by: document.querySelectorAll('.shared-by')[index].value
+                })),
+                transfers: Array.from(document.querySelectorAll('.transfer-amount')).map((input, index) => ({
+                    amount: input.value.replace(/,/g, ''),
+                    from: document.querySelectorAll('.transfer-from')[index].value,
+                    to: document.querySelectorAll('.transfer-to')[index].value
+                }))
+            };
+            
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('rent_total').textContent = data.total_rent;
+                    document.getElementById('rent_total_info').textContent = data.total_rent;
+                    document.getElementById('base_rent').textContent = data.base_rent;
+                    
+                    // Set final amounts
+                    document.getElementById('tiep_result').textContent = data.tiep_final;
+                    document.getElementById('hieu_result').textContent = data.hieu_final;
+                    document.getElementById('hai_result').textContent = data.hai_final;
+                    
+                    // Set summary
+                    document.getElementById('tiep_summary').textContent = data.tiep_final + " VND";
+                    document.getElementById('hieu_summary').textContent = data.hieu_final + " VND";
+                    document.getElementById('hai_summary').textContent = data.hai_final + " VND";
+                    document.getElementById('total_check').textContent = data.total_check;
+                    
+                    // Populate breakdowns
+                    populateBreakdownTable('tiep-breakdown', data.tiep_breakdown);
+                    populateBreakdownTable('hieu-breakdown', data.hieu_breakdown);
+                    populateBreakdownTable('hai-breakdown', data.hai_breakdown);
+                    
+                    document.getElementById('resultCard').style.display = 'block';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('An error occurred: ' + error);
+            }
+        });
+    </script>
+</body>
+</html> 
