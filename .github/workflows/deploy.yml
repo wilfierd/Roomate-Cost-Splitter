@@ -1,0 +1,29 @@
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to PythonAnywhere
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PYTHONANYWHERE_HOST }}
+        username: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+        key: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
+        port: ${{ secrets.PYTHONANYWHERE_SSH_PORT }}
+        script: |
+          cd ~/myproject
+          git pull origin main
+          source venv/bin/activate
+          pip install -r requirements.txt
+          touch /var/www/${{ secrets.PYTHONANYWHERE_USERNAME }}_pythonanywhere_com_wsgi.py
+

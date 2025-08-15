@@ -104,6 +104,7 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+DEPLOYMENT.md 
 
 # IDE
 .vscode/
@@ -123,3 +124,4 @@ Thumbs.db
 
 # Windows
 *.lnk
+
