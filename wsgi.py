@@ -2,7 +2,7 @@ import sys
 import os
 
 # Add the project directory to the Python path
-path = '/home/yourusername/myproject'
+path = '/home/hieunguyenhanu/Roomate-Cost-Splitter'
 if path not in sys.path:
     sys.path.append(path)
 

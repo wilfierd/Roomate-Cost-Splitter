@@ -21,9 +21,9 @@ jobs:
         key: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
         port: ${{ secrets.PYTHONANYWHERE_SSH_PORT }}
         script: |
-          cd ~/myproject
+          cd ~/Roomate-Cost-Splitter
           git pull origin main
-          source venv/bin/activate
+          workon flaskenv
           pip install -r requirements.txt
-          touch /var/www/${{ secrets.PYTHONANYWHERE_USERNAME }}_pythonanywhere_com_wsgi.py
+          touch /var/www/hieunguyenhanu_pythonanywhere_com_wsgi.py
 
