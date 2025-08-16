@@ -13,17 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Deploy to PythonAnywhere
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.PYTHONANYWHERE_HOST }}
-        username: ${{ secrets.PYTHONANYWHERE_USERNAME }}
-        key: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
-        port: ${{ secrets.PYTHONANYWHERE_SSH_PORT }}
-        script: |
-          cd ~/Roomate-Cost-Splitter
-          git pull origin main
-          workon flaskenv
-          pip install -r requirements.txt
-          touch /var/www/hieunguyenhanu_pythonanywhere_com_wsgi.py
+    - name: Trigger PythonAnywhere Webhook
+      run: |
+        curl -X POST \
+          -H "Content-Type: application/json" \
+          -H "X-Hub-Signature-256: sha256=${{ secrets.WEBHOOK_SECRET }}" \
+          -d '{"ref": "refs/heads/main", "repository": {"name": "Roomate-Cost-Splitter"}}' \
+          https://hieunguyenhanu.pythonanywhere.com/webhook
 

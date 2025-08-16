@@ -1,4 +1,8 @@
 from flask import Flask, render_template, request, jsonify
+import subprocess
+import os
+import hmac
+import hashlib
 
 app = Flask(__name__, template_folder='.')
 
@@ -156,6 +160,59 @@ def calculate():
 		return jsonify(results)
 	except Exception as e:
 		return jsonify({'error': str(e)}), 400
+
+# Webhook endpoint for GitHub Actions
+@app.route('/webhook', methods=['POST'])
+def webhook():
+	try:
+		# Optional: Verify webhook signature for security
+		WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', 'your-secret-key')
+		signature = request.headers.get('X-Hub-Signature-256')
+		
+		if signature and WEBHOOK_SECRET:
+			payload = request.get_data()
+			expected_signature = 'sha256=' + hmac.new(
+				WEBHOOK_SECRET.encode(), payload, hashlib.sha256
+			).hexdigest()
+			if not hmac.compare_digest(signature, expected_signature):
+				return jsonify({'error': 'Invalid signature'}), 403
+
+		# Deploy commands
+		deploy_commands = [
+			'cd /home/hieunguyenhanu/Roomate-Cost-Splitter',
+			'git pull origin main',
+			'source /home/hieunguyenhanu/.virtualenvs/flaskenv/bin/activate',
+			'pip install -r requirements.txt',
+			'touch /var/www/hieunguyenhanu_pythonanywhere_com_wsgi.py'
+		]
+		
+		# Execute commands
+		result = subprocess.run(
+			' && '.join(deploy_commands),
+			shell=True,
+			capture_output=True,
+			text=True,
+			cwd='/home/hieunguyenhanu/Roomate-Cost-Splitter'
+		)
+		
+		if result.returncode == 0:
+			return jsonify({
+				'status': 'success',
+				'message': 'Deployment completed successfully',
+				'output': result.stdout
+			}), 200
+		else:
+			return jsonify({
+				'status': 'error', 
+				'message': 'Deployment failed',
+				'error': result.stderr
+			}), 500
+			
+	except Exception as e:
+		return jsonify({
+			'status': 'error',
+			'message': str(e)
+		}), 500
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', debug=True) 
