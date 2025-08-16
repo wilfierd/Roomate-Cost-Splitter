@@ -15,9 +15,11 @@ jobs:
       
     - name: Trigger PythonAnywhere Webhook
       run: |
+        payload='{"ref": "refs/heads/main", "repository": {"name": "Roomate-Cost-Splitter"}}'
+        signature=$(echo -n "$payload" | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" | sed 's/^.* //')
         curl -X POST \
           -H "Content-Type: application/json" \
-          -H "X-Hub-Signature-256: sha256=${{ secrets.WEBHOOK_SECRET }}" \
-          -d '{"ref": "refs/heads/main", "repository": {"name": "Roomate-Cost-Splitter"}}' \
+          -H "X-Hub-Signature-256: sha256=$signature" \
+          -d "$payload" \
           https://hieunguyenhanu.pythonanywhere.com/webhook
 

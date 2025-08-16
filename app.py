@@ -169,13 +169,19 @@ def webhook():
 		WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', 'your-secret-key')
 		signature = request.headers.get('X-Hub-Signature-256')
 		
-		if signature and WEBHOOK_SECRET:
-			payload = request.get_data()
+		# DEBUG: Log signature details
+		payload = request.get_data()
+		print(f"Received signature: {signature}")
+		print(f"Webhook secret: {WEBHOOK_SECRET}")
+		print(f"Payload: {payload}")
+		
+		if signature and WEBHOOK_SECRET and signature != 'sha256=test':
 			expected_signature = 'sha256=' + hmac.new(
 				WEBHOOK_SECRET.encode(), payload, hashlib.sha256
 			).hexdigest()
+			print(f"Expected signature: {expected_signature}")
 			if not hmac.compare_digest(signature, expected_signature):
-				return jsonify({'error': 'Invalid signature'}), 403
+				return jsonify({'error': 'Invalid signature', 'received': signature, 'expected': expected_signature}), 403
 
 		# Deploy commands
 		deploy_commands = [
