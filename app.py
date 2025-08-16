@@ -184,22 +184,18 @@ def webhook():
 		# 	if not hmac.compare_digest(signature, expected_signature):
 		# 		return jsonify({'error': 'Invalid signature', 'received': signature, 'expected': expected_signature}), 403
 
-		# Deploy commands using bash instead of sh
-		deploy_script = '''#!/bin/bash
-cd /home/hieunguyenhanu/Roomate-Cost-Splitter
-git pull origin main
-source /home/hieunguyenhanu/.virtualenvs/flaskenv/bin/activate
-pip install -r requirements.txt
-touch /var/www/hieunguyenhanu_pythonanywhere_com_wsgi.py
-'''
-		
-		# Execute commands with bash
-		result = subprocess.run(
-			['/bin/bash', '-c', deploy_script],
-			capture_output=True,
-			text=True,
-			cwd='/home/hieunguyenhanu/Roomate-Cost-Splitter'
-		)
+		# Simplified deployment - just git pull and touch wsgi
+		try:
+			# Git pull
+			git_result = subprocess.run(['git', 'pull', 'origin', 'main'], 
+				capture_output=True, text=True, cwd='/home/hieunguyenhanu/Roomate-Cost-Splitter')
+			
+			# Touch WSGI file to reload
+			subprocess.run(['touch', '/var/www/hieunguyenhanu_pythonanywhere_com_wsgi.py'])
+			
+			result = git_result  # Use git result for response
+		except Exception as e:
+			return jsonify({'status': 'error', 'message': str(e)}), 500
 		
 		if result.returncode == 0:
 			return jsonify({
