@@ -184,19 +184,18 @@ def webhook():
 		# 	if not hmac.compare_digest(signature, expected_signature):
 		# 		return jsonify({'error': 'Invalid signature', 'received': signature, 'expected': expected_signature}), 403
 
-		# Deploy commands
-		deploy_commands = [
-			'cd /home/hieunguyenhanu/Roomate-Cost-Splitter',
-			'git pull origin main',
-			'source /home/hieunguyenhanu/.virtualenvs/flaskenv/bin/activate',
-			'pip install -r requirements.txt',
-			'touch /var/www/hieunguyenhanu_pythonanywhere_com_wsgi.py'
-		]
+		# Deploy commands using bash instead of sh
+		deploy_script = '''#!/bin/bash
+cd /home/hieunguyenhanu/Roomate-Cost-Splitter
+git pull origin main
+source /home/hieunguyenhanu/.virtualenvs/flaskenv/bin/activate
+pip install -r requirements.txt
+touch /var/www/hieunguyenhanu_pythonanywhere_com_wsgi.py
+'''
 		
-		# Execute commands
+		# Execute commands with bash
 		result = subprocess.run(
-			' && '.join(deploy_commands),
-			shell=True,
+			['/bin/bash', '-c', deploy_script],
 			capture_output=True,
 			text=True,
 			cwd='/home/hieunguyenhanu/Roomate-Cost-Splitter'
